@@ -190,8 +190,7 @@ imag_plot <- imag_plot %>% layout(title=list(text="<b>Regression surface for ima
                                                tickvals = y_text),
                                     zaxis=list(title=paste("<b><i>Z<sub>j</sub></i></b>"),
                                                ticktext = paste0("<b>", zimag_z_text, "</b>"),
-                                               tickvals = zimag_z_text)
-                                  ))
+                                               tickvals = zimag_z_text)))
 
 imag_plot
 

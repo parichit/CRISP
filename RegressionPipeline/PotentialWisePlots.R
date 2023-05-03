@@ -12,13 +12,12 @@ legend_size = 1
 title_color = "Black"
 
 
-data <- read.csv2(file = "/Users/schmuck/Library/CloudStorage/OneDrive-IndianaUniversity/PhD/ML_Battery_Data/RegressionPipeline/Regenerated_data.csv",
+data <- read.csv2(file = "/Users/schmuck/Library/CloudStorage/OneDrive-IndianaUniversity/PhD/DSAA_23/RegressionPipeline/Regenerated_lowFreq_data.csv",
                        stringsAsFactors = FALSE, sep=",")
 
-colnames(data) <- c("Soc", "Volt", "Freq", "Zreal", "Zimag", "Zreal_pred", "Zimag_pred")
+colnames(data) <- c("Volt", "Freq", "Zreal", "Zimag", "Zreal_pred", "Zimag_pred")
 data <- as.data.frame(apply(data, 2, as.numeric))
 data[, 1] = as.factor(data[, 1])
-data[, 2] = as.factor(data[, 2])
 data$Zimag = -data$Zimag
 data$Zimag_pred = -data$Zimag_pred
 data = data[order(data$Freq, decreasing = TRUE), ]
@@ -33,8 +32,8 @@ potentail_plots <- function(){
       
     temp_data = data[data$Volt == potentials[i], ]
     
-    temp_data1 <- temp_data[, c(4, 5)]
-    temp_data2 <- temp_data[, c(6, 7)]
+    temp_data1 <- temp_data[, c(3, 4)]
+    temp_data2 <- temp_data[, c(5, 6)]
     colnames(temp_data2) <- c("Zreal", "Zimag")
     temp_data1 <- rbind(temp_data1, temp_data2)
     Annotation=c(rep("Data", nrow(temp_data)), rep("Regenerated", nrow(temp_data)))
