@@ -20,6 +20,7 @@ data <- as.data.frame(apply(data, 2, as.numeric))
 data[, 1] = as.factor(data[, 1])
 data$Zimag = -data$Zimag
 data$Zimag_pred = -data$Zimag_pred
+data = data[order(data$Volt, decreasing = TRUE), ]
 data = data[order(data$Freq, decreasing = TRUE), ]
 
 
@@ -141,9 +142,9 @@ comb_plots[[length(comb_plots)+1]] <- myLegend
 FinalPlot = grid.arrange(grid_title, arrangeGrob(grobs=comb_plots, nrow=4, ncol=3), 
                          nrow=2, heights=c(0.5, 10))
 
-ggsave("/Users/schmuck/Library/CloudStorage/OneDrive-IndianaUniversity/PhD/ML_Battery_Data/RegressionPipeline/PotentialWisePlot.png", 
-       FinalPlot, dpi=360, height=16,
-       width=14, units="in")
+# ggsave("/Users/schmuck/Library/CloudStorage/OneDrive-IndianaUniversity/PhD/ML_Battery_Data/RegressionPipeline/PotentialWisePlot.png", 
+#        FinalPlot, dpi=360, height=16,
+#        width=14, units="in")
 
 
 # temp_data = data[data$Volt == 3.45, ]
