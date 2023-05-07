@@ -47,6 +47,8 @@ read_data <- function(base_data_path){
 
 Inputdata <- read_data(base_data_path)
 
+write.table(Inputdata, file="/Users/schmuck/Library/CloudStorage/OneDrive-IndianaUniversity/PhD/DSAA_23/data/LowFreqData/raw_data.csv", sep=",", row.names = FALSE)
+
 # print(unique(Inputdata$Volt))
 # print(dim(Inputdata))
 # print(head(Inputdata))

@@ -1,6 +1,7 @@
 suppressMessages(library("caretEnsemble"))
 library(ggplot2)
 library(dplyr)
+library(kknn)
 
 
 regenerate_data <- function(train_data, test_data, real_comp_best_models, imag_comp_best_models, 
@@ -20,7 +21,6 @@ regenerate_data <- function(train_data, test_data, real_comp_best_models, imag_c
       train_new_data = as.data.frame(train_new_data)
       colnames(train_new_data) <- c("Volt", "Freq", "Zreal", "Zimag")
       
-      # train_new_data <- dplyr::arrange(Volt)
       
       set.seed(9)
       train_indices <- createDataPartition(y = as.factor(train_new_data$Volt), p = 0.85, list = FALSE)
@@ -44,58 +44,49 @@ regenerate_data <- function(train_data, test_data, real_comp_best_models, imag_c
                                     methodList=real_comp_best_models, preProcess= c("center","scale"))
           } else if (pred_type == "imag"){
             model_list <- caretList(Zimag~., data=train_data, trControl=control, 
-                                    methodList=imag_comp_best_models, preProcess= c("center","scale")
-                                    # tuneList=list(
-                                    #   knn1=caretModelSpec(method="kknn", tuneGrid=data.frame(.kmax=5, .kernel="inv", .distance=1)))
-                                    )
-            # tuneGrid = data.frame(.kmax = 5, .kernel = "inv", .distance=1)
-          }
+                                    methodList=imag_comp_best_models, preProcess= c("center","scale"))
+                                    }
           
           return(model_list)
       }
   
     
-    real_comp_best_models = c("Rborist")
+    real_comp_best_models = c("Rborist", "ranger")
     imag_comp_best_models = c("kknn")
     number = 5
     repeats = 5
     set_seed = 142
     file_name_string = "lowFreq"
     
-    # real_data <- train_data[, -4]
-    # imag_data <- train_data[, -3]
+    # train_data <- train_data[-which(train_data$Freq>4000), ]
     
     
-    new_data <- get_new_data()
+    real_data <- train_data[, -4]
+    imag_data <- train_data[, -3]
     
-    real_data <- new_data[[1]][, -4]
-    imag_data <- new_data[[1]][, -3]
-    test_data = new_data[[2]]
+    
+    # new_data <- get_new_data()
+    # 
+    # real_data <- new_data[[1]][, -4]
+    # imag_data <- new_data[[1]][, -3]
+    # test_data = new_data[[2]]
 
-    # temp <- imag_data[, c(1,2)]
-    # 
-    # new_imag_data <- as.data.frame(kernelMatrix(rbfdot(sigma = 1), temp[, 1], temp[, 2])@.Data)
-    # new_imag_data <- new_imag_data[, 402:456]
-    # 
-    # colnames(new_imag_data) <- seq(1, dim(new_imag_data)[2])
-    # new_imag_data["Zimag"] <- imag_data$Zimag
-    
-    # ggplot(data=real_data, aes(x=Zreal)) + geom_histogram()
-    # ggplot(data=imag_data, aes(x=Zimag)) + geom_histogram()
-  
     real_model_list <- run_ensemble("real", real_data, number, repeats, set_seed)
     ensemble_real_data <- caretEnsemble(real_model_list, metric="RMSE")
     
-    imag_model_list <- run_ensemble("imag", imag_data, number, repeats, set_seed)
-    ensemble_imag_data <- caretEnsemble(imag_model_list, metric="RMSE")
+    # imag_model_list <- run_ensemble("imag", imag_data, number, repeats, set_seed)
+    # ensemble_imag_data <- caretEnsemble(imag_model_list, metric="RMSE")
     
     # new_test = rbind(imag_data, test_data[, -3])
-    # mdl <- kknn(Zimag~., train=imag_data, test=new_test, distance=1, kernel="inv", k=2)
-    # fit <- fitted(mdl)
-    # RMSE(new_test$Zimag, fit)
+    # mdl <- kknn(Zimag~., train=imag_data, test=test_data[, -3], distance=1, kernel="inv", k=2)
+    mdl <- train.kknn(Zimag ~ ., imag_data, kmax = 15,  kernel = c("triangular", "rectangular", "epanechnikov", "optimal", "inv"), distance = 1)
+    
+    fit <- fitted(mdl)
+    RMSE(test_data$Zimag, fit)
+    mdl$fitted.values
     
     summary(ensemble_real_data)
-    summary(ensemble_imag_data)
+    summary(mdl)
     
     # train_data <- rbind(train_data, test_data)
     # u_volts = unique(train_data$Volt)
@@ -149,30 +140,33 @@ regenerate_data <- function(train_data, test_data, real_comp_best_models, imag_c
     #   print(i_d)
     # }
     
-    print(sum(abs(predict(real_model_list, real_data) - real_data$Zreal)))
-    print(sum(abs(predict(real_model_list, test_data[, -4]) - test_data$Zreal)))
-
-    print(sum(abs(predict(imag_model_list, imag_data) - imag_data$Zimag)))
-    print(sum(abs(predict(imag_model_list, test_data[, -3]) - test_data$Zimag)))
-    
     ### Diff in values between training real and predicted values
-    print(sum(abs(predict(ensemble_real_data, real_data) - real_data$Zreal)))
-    print(sum(abs(predict(ensemble_imag_data, imag_data) - imag_data$Zimag)))
-
-    print(sum(abs(predict(ensemble_real_data, test_data[, -4]) - test_data$Zreal)))
-    print(sum(abs(predict(ensemble_imag_data, test_data[, -3]) - test_data$Zimag)))
+    # print(sum(abs(predict(real_model_list, real_data) - real_data$Zreal)))
+    # print(sum(abs(predict(real_model_list, test_data[, -4]) - test_data$Zreal)))
     
-    # real_data <- train_data[, -4]
-    # imag_data <- train_data[, -3]
+    print(sum(abs(predict(ensemble_real_data, real_data) - real_data$Zreal)))
+    print(sum(abs(predict(ensemble_real_data, test_data[, -4]) - test_data$Zreal)))
+
+    # print(sum(abs(predict(imag_model_list, imag_data) - imag_data$Zimag)))
+    # print(sum(abs(predict(imag_model_list, test_data[, -3]) - test_data$Zimag)))
+    # 
+    # print(sum(abs(predict(ensemble_imag_data, imag_data) - imag_data$Zimag)))
+    # print(sum(abs(predict(ensemble_imag_data, test_data[, -3]) - test_data$Zimag)))
+    
+    
+    saveRDS(ensemble_real_data, "real_mdl.rds")
+    saveRDS(mdl, "imag_mdl.rds")
     
     real_data <- rbind(real_data, test_data[, -4])
     imag_data <- rbind(imag_data, test_data[, -3])
-
-    real_preds = predict(real_model_list, newdata = real_data[, c(1,2)])
-    imag_preds = predict(ensemble_imag_data, newdata = imag_data[, c(1,2)])
+    
+    real_preds = predict(ensemble_real_data, newdata = real_data[, c(1,2)])
+    imag_preds = predict(imag_model_list, newdata = imag_data[, c(1,2)])
 
     real_data = as.data.frame(cbind(real_data, "Zreal_pred"=real_preds[1:length(real_preds)]))
     imag_data = as.data.frame(cbind(imag_data, "Zimag_pred"=imag_preds))
+    
+    colnames(imag_data) <- c("Volt", "Freq", "Zimag", "Zimag_pred")
 
     regenerated_data <- as.data.frame(cbind(real_data[, c(1, 2, 3)], "Zimag"=imag_data$Zimag, 
                                         "Zreal_pred"=real_data$Zreal_pred, "Zimag_pred"=imag_data$Zimag_pred))
