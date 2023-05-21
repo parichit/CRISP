@@ -51,7 +51,7 @@ regenerate_data <- function(train_data, test_data, real_comp_best_models, imag_c
       }
   
     
-    real_comp_best_models = c("Rborist", "ranger")
+    real_comp_best_models = c("Rborist", "ranger", "ctree")
     imag_comp_best_models = c("kknn")
     number = 5
     repeats = 5
@@ -60,33 +60,32 @@ regenerate_data <- function(train_data, test_data, real_comp_best_models, imag_c
     
     # train_data <- train_data[-which(train_data$Freq>4000), ]
     
-    
+    train_data <- train_data[-which(train_data$Freq < 0.00001), ]
     real_data <- train_data[, -4]
     imag_data <- train_data[, -3]
     
-    
-    # new_data <- get_new_data()
-    # 
-    # real_data <- new_data[[1]][, -4]
-    # imag_data <- new_data[[1]][, -3]
-    # test_data = new_data[[2]]
 
     real_model_list <- run_ensemble("real", real_data, number, repeats, set_seed)
     ensemble_real_data <- caretEnsemble(real_model_list, metric="RMSE")
+    
+    # rs <- Rborist::Rborist(real_data[, c(1,2)], real_data$Zreal, nTree=50, nLevel=10)
+    # RMSE(real_data$Zreal, as.numeric(unlist(rs$prediction)))
     
     # imag_model_list <- run_ensemble("imag", imag_data, number, repeats, set_seed)
     # ensemble_imag_data <- caretEnsemble(imag_model_list, metric="RMSE")
     
     # new_test = rbind(imag_data, test_data[, -3])
     # mdl <- kknn(Zimag~., train=imag_data, test=test_data[, -3], distance=1, kernel="inv", k=2)
-    mdl <- train.kknn(Zimag ~ ., imag_data, kmax = 15,  kernel = c("triangular", "rectangular", "epanechnikov", "optimal", "inv"), distance = 1)
+    tr_mdl <- kknn(Zimag ~ ., imag_data, test=imag_data[, -3], k = 2,  kernel="inv", distance = 1)
+    test_mdl <- kknn(Zimag ~ ., imag_data, test=test_data[, -3], k = 2,  kernel="inv", distance = 1)
     
-    fit <- fitted(mdl)
-    RMSE(test_data$Zimag, fit)
-    mdl$fitted.values
+    tr_fit <- fitted(tr_mdl)
+    RMSE(imag_data$Zimag, as.numeric(tr_fit))
+    
+    test_fit <- fitted(test_mdl)
+    RMSE(test_data$Zimag, as.numeric(test_fit))
     
     summary(ensemble_real_data)
-    summary(mdl)
     
     # train_data <- rbind(train_data, test_data)
     # u_volts = unique(train_data$Volt)
@@ -155,16 +154,16 @@ regenerate_data <- function(train_data, test_data, real_comp_best_models, imag_c
     
     
     saveRDS(ensemble_real_data, "real_mdl.rds")
-    saveRDS(mdl, "imag_mdl.rds")
+    saveRDS(tr_mdl, "imag_mdl.rds")
     
     real_data <- rbind(real_data, test_data[, -4])
     imag_data <- rbind(imag_data, test_data[, -3])
     
     real_preds = predict(ensemble_real_data, newdata = real_data[, c(1,2)])
-    imag_preds = predict(imag_model_list, newdata = imag_data[, c(1,2)])
+    # imag_preds = predict(imag_model_list, newdata = imag_data[, c(1,2)])
 
     real_data = as.data.frame(cbind(real_data, "Zreal_pred"=real_preds[1:length(real_preds)]))
-    imag_data = as.data.frame(cbind(imag_data, "Zimag_pred"=imag_preds))
+    imag_data = as.data.frame(cbind(imag_data, "Zimag_pred"=as.numeric(c(tr_fit, test_fit))))
     
     colnames(imag_data) <- c("Volt", "Freq", "Zimag", "Zimag_pred")
 
