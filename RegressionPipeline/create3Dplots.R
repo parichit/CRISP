@@ -15,18 +15,16 @@ repeats = 5
 set_seed = 142
 file_name_string = "lowFreq"
 
-out <- regenerate_data(train_data, test_data, real_comp_best_models, imag_comp_best_models, 
-                set_seed, number, repeats, file_name_string)
-
+# out <- regenerate_data(train_data, test_data, real_comp_best_models, imag_comp_best_models, 
+#                 set_seed, number, repeats, file_name_string)
 
 real_ensemble <- out$real
 imag_ensemble <- out$imag
 
 
-
-train_data_copy = train_data
-train_data_copy <- scale(train_data_copy, scale=TRUE, center=TRUE)
-train_data_copy <- as.data.frame(train_data_copy)
+# train_data_copy = train_data
+# train_data_copy <- scale(train_data_copy, scale=TRUE, center=TRUE)
+# train_data_copy <- as.data.frame(train_data_copy)
 
 
 # Create the grid of predictors for the 3d plot
@@ -100,11 +98,15 @@ train_data_copy <- as.data.frame(train_data_copy)
 
 
 
+grid.lines <- 50
 
+u <- seq(0.13722964, 5.58889243, by=0.09)
+l <- seq(min(train_data$Freq), max(train_data$Freq), length.out=grid.lines)
+grid_y = c(l, u)
+# grid_y <- seq(min(train_data_copy$Freq), max(train_data_copy$Freq), length.out = grid.lines)
 
-grid.lines <- 40
-grid_x <- seq(min(train_data_copy$Volt), max(train_data_copy$Volt), length.out = grid.lines)
-grid_y <- seq(min(train_data_copy$Freq), max(train_data_copy$Freq), length.out = grid.lines)
+grid_x <- seq(min(train_data$Volt), max(train_data$Volt), length.out = grid.lines)
+
 gridXY <- expand.grid("Volt" = grid_x, "Freq" = grid_y, KEEP.OUT.ATTRS = F)
 dim(gridXY)
 
@@ -115,7 +117,7 @@ gridXY$"Zimag_pred" <- predict(imag_ensemble, newdata = gridXY)
 gridXYreal <- acast(gridXY, Volt~Freq, value.var = "Zreal_pred")
 gridXYimag <- acast(gridXY, Volt~Freq, value.var = "Zimag_pred")
 
-x_text = c(round(unique(train_data_copy$Volt), 2))
+x_text = c(round(unique(train_data$Volt), 2))
 y_text = c(seq(2000, 10000, 2000))
 zreal_z_text = c(seq(0, 1, 0.2))
 
@@ -123,11 +125,11 @@ zreal_z_text = c(seq(0, 1, 0.2))
 # train_data_copy$Zreal -
 
 real_plot <- plot_ly(train_data, 
-                     x = train_data_copy$Volt, 
-                     y = train_data_copy$Freq, 
-                     z = train_data_copy$Zreal,
+                     x = train_data$Volt, 
+                     y = train_data$Freq, 
+                     z = train_data$Zreal,
                      type = "scatter3d", mode = "markers", 
-                     marker = list(color = ~Volt, color = train_data_copy$colors,
+                     marker = list(color = ~Volt, color = train_data$colors,
                      colorscale = list(c(0, rgb(200, 50, 0, max = 255)), 
                      c(1, rgb(0, 255, 100, max = 255))), 
                      colorbar = list(title = "<b>Cell potentail (V)</b>", len=0.3, thickness=20),
@@ -162,11 +164,11 @@ real_plot
 zimag_z_text = c(seq(0, 14, 2))
 
 imag_plot <- plot_ly(train_data, 
-                     x = train_data_copy$Volt, 
-                     y = train_data_copy$Freq, 
-                     z = train_data_copy$Zimag,
+                     x = train_data$Volt, 
+                     y = train_data$Freq, 
+                     z = train_data$Zimag,
                      type = "scatter3d", mode = "markers", 
-                     marker = list(color = ~Volt, color = train_data_copy$colors,
+                     marker = list(color = ~Volt, color = train_data$colors,
                                    colorscale = list(c(0, rgb(200, 50, 0, max = 255)), 
                                                      c(1, rgb(0, 255, 100, max = 255))), 
                                    colorbar = list(title = "<b>Cell potentail (V)</b>", len=0.3, thickness=20),

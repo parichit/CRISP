@@ -51,8 +51,8 @@ regenerate_data <- function(train_data, test_data, real_comp_best_models, imag_c
       }
   
     
-    real_comp_best_models = c("Rborist", "ranger", "ctree")
-    imag_comp_best_models = c("kknn")
+    real_comp_best_models = c("Rborist", "ranger")
+    imag_comp_best_models = c("kknn", "qrf")
     number = 5
     repeats = 5
     set_seed = 142
@@ -71,21 +71,22 @@ regenerate_data <- function(train_data, test_data, real_comp_best_models, imag_c
     # rs <- Rborist::Rborist(real_data[, c(1,2)], real_data$Zreal, nTree=50, nLevel=10)
     # RMSE(real_data$Zreal, as.numeric(unlist(rs$prediction)))
     
-    # imag_model_list <- run_ensemble("imag", imag_data, number, repeats, set_seed)
-    # ensemble_imag_data <- caretEnsemble(imag_model_list, metric="RMSE")
+    imag_model_list <- run_ensemble("imag", imag_data, number, repeats, set_seed)
+    ensemble_imag_data <- caretEnsemble(imag_model_list, metric="RMSE")
     
     # new_test = rbind(imag_data, test_data[, -3])
     # mdl <- kknn(Zimag~., train=imag_data, test=test_data[, -3], distance=1, kernel="inv", k=2)
-    tr_mdl <- kknn(Zimag ~ ., imag_data, test=imag_data[, -3], k = 2,  kernel="inv", distance = 1)
-    test_mdl <- kknn(Zimag ~ ., imag_data, test=test_data[, -3], k = 2,  kernel="inv", distance = 1)
-    
-    tr_fit <- fitted(tr_mdl)
-    RMSE(imag_data$Zimag, as.numeric(tr_fit))
-    
-    test_fit <- fitted(test_mdl)
-    RMSE(test_data$Zimag, as.numeric(test_fit))
+    # tr_mdl <- kknn(Zimag ~ ., imag_data, test=imag_data[, -3], k = 2,  kernel="inv", distance = 1)
+    # test_mdl <- kknn(Zimag ~ ., imag_data, test=test_data[, -3], k = 2,  kernel="inv", distance = 1)
+    # 
+    # tr_fit <- fitted(tr_mdl)
+    # RMSE(imag_data$Zimag, as.numeric(tr_fit))
+    # 
+    # test_fit <- fitted(test_mdl)
+    # RMSE(test_data$Zimag, as.numeric(test_fit))
     
     summary(ensemble_real_data)
+    summary(ensemble_imag_data)
     
     # train_data <- rbind(train_data, test_data)
     # u_volts = unique(train_data$Volt)
@@ -142,9 +143,9 @@ regenerate_data <- function(train_data, test_data, real_comp_best_models, imag_c
     ### Diff in values between training real and predicted values
     # print(sum(abs(predict(real_model_list, real_data) - real_data$Zreal)))
     # print(sum(abs(predict(real_model_list, test_data[, -4]) - test_data$Zreal)))
-    
-    print(sum(abs(predict(ensemble_real_data, real_data) - real_data$Zreal)))
-    print(sum(abs(predict(ensemble_real_data, test_data[, -4]) - test_data$Zreal)))
+    # 
+    # print(sum(abs(predict(ensemble_real_data, real_data) - real_data$Zreal)))
+    # print(sum(abs(predict(ensemble_real_data, test_data[, -4]) - test_data$Zreal)))
 
     # print(sum(abs(predict(imag_model_list, imag_data) - imag_data$Zimag)))
     # print(sum(abs(predict(imag_model_list, test_data[, -3]) - test_data$Zimag)))
@@ -153,43 +154,47 @@ regenerate_data <- function(train_data, test_data, real_comp_best_models, imag_c
     # print(sum(abs(predict(ensemble_imag_data, test_data[, -3]) - test_data$Zimag)))
     
     
-    saveRDS(ensemble_real_data, "real_mdl.rds")
-    saveRDS(tr_mdl, "imag_mdl.rds")
+    # saveRDS(ensemble_real_data, "real_mdl.rds")
+    # saveRDS(tr_mdl, "imag_mdl.rds")
+    
     
     real_data <- rbind(real_data, test_data[, -4])
     imag_data <- rbind(imag_data, test_data[, -3])
     
     real_preds = predict(ensemble_real_data, newdata = real_data[, c(1,2)])
-    # imag_preds = predict(imag_model_list, newdata = imag_data[, c(1,2)])
+    imag_preds = predict(imag_model_list, newdata = imag_data[, c(1,2)])
 
     real_data = as.data.frame(cbind(real_data, "Zreal_pred"=real_preds[1:length(real_preds)]))
-    imag_data = as.data.frame(cbind(imag_data, "Zimag_pred"=as.numeric(c(tr_fit, test_fit))))
+    imag_data = as.data.frame(cbind(imag_data, "Zimag_pred"=real_preds[1:length(imag_preds)]))
+    
+    
+    # imag_data = as.data.frame(cbind(imag_data, "Zimag_pred"=as.numeric(c(tr_fit, test_fit))))
     
     colnames(imag_data) <- c("Volt", "Freq", "Zimag", "Zimag_pred")
 
-    regenerated_data <- as.data.frame(cbind(real_data[, c(1, 2, 3)], "Zimag"=imag_data$Zimag, 
-                                        "Zreal_pred"=real_data$Zreal_pred, "Zimag_pred"=imag_data$Zimag_pred))
+    # regenerated_data <- as.data.frame(cbind(real_data[, c(1, 2, 3)], "Zimag"=imag_data$Zimag, 
+    #                                     "Zreal_pred"=real_data$Zreal_pred, "Zimag_pred"=imag_data$Zimag_pred))
     
     
-    v <- unique(regenerated_data$Volt)
-    v = c(3.177)
-    c = 0
-    
-    for (i in v){
-      temp <-  train_data[train_data$Volt == i, ]
-      temp <- temp[order(temp$Freq, decreasing = FALSE), ]
-      
-      # f_sd = sd(temp[temp$Freq <1, 2])
-      # f_m = mean(temp[temp$Freq <1, 2])
-      
-      f_sd = sd(temp$Freq)
-      f_m = mean(temp$Freq)
-      
-      print(f_sd)
-      print(f_m)
-      
-      n = temp[temp$Freq < (f_m-f_sd), ]
-      print(nrow(n))
+    # v <- unique(regenerated_data$Volt)
+    # v = c(3.177)
+    # c = 0
+    # 
+    # for (i in v){
+    #   temp <-  train_data[train_data$Volt == i, ]
+    #   temp <- temp[order(temp$Freq, decreasing = FALSE), ]
+    #   
+    #   # f_sd = sd(temp[temp$Freq <1, 2])
+    #   # f_m = mean(temp[temp$Freq <1, 2])
+    #   
+    #   f_sd = sd(temp$Freq)
+    #   f_m = mean(temp$Freq)
+    #   
+    #   print(f_sd)
+    #   print(f_m)
+    #   
+    #   n = temp[temp$Freq < (f_m-f_sd), ]
+    #   print(nrow(n))
       
       # for (j in 1:nrow(temp)){
       #   
@@ -205,15 +210,14 @@ regenerate_data <- function(train_data, test_data, real_comp_best_models, imag_c
       #     }
       #   }
       # }
-      print(paste("Total size: ", nrow(temp), "less than 1: ", c))
-    }
+    #   print(paste("Total size: ", nrow(temp), "less than 1: ", c))
+    # }
     
     
     
-    write.table(regenerated_data, file=paste("Regenerated_", file_name_string, "_data.csv", sep=""), row.names = FALSE, sep=",")
-    # 
-    # out = list("real"=ensemble_real_data, "imag"=ensemble_imag_data)
-    # return(out)
+    # write.table(regenerated_data, file=paste("Regenerated_", file_name_string, "_data.csv", sep=""), row.names = FALSE, sep=",")
+    out = list("real"=ensemble_real_data, "imag"=ensemble_imag_data)
+    return(out)
 
 
 # orig_volt = 3.45
