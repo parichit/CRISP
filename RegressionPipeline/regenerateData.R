@@ -60,7 +60,7 @@ regenerate_data <- function(train_data, test_data, real_comp_best_models, imag_c
     
     # train_data <- train_data[-which(train_data$Freq>4000), ]
     
-    train_data <- train_data[-which(train_data$Freq < 0.00001), ]
+    train_data <- train_data[-which(train_data$Freq < 0.0001), ]
     real_data <- train_data[, -4]
     imag_data <- train_data[, -3]
     
@@ -172,8 +172,8 @@ regenerate_data <- function(train_data, test_data, real_comp_best_models, imag_c
     
     colnames(imag_data) <- c("Volt", "Freq", "Zimag", "Zimag_pred")
 
-    # regenerated_data <- as.data.frame(cbind(real_data[, c(1, 2, 3)], "Zimag"=imag_data$Zimag, 
-    #                                     "Zreal_pred"=real_data$Zreal_pred, "Zimag_pred"=imag_data$Zimag_pred))
+    regenerated_data <- as.data.frame(cbind(real_data[, c(1, 2, 3)], "Zimag"=imag_data$Zimag,
+                                        "Zreal_pred"=real_data$Zreal_pred, "Zimag_pred"=imag_data$Zimag_pred))
     
     
     # v <- unique(regenerated_data$Volt)

@@ -15,95 +15,23 @@ repeats = 5
 set_seed = 142
 file_name_string = "lowFreq"
 
-# out <- regenerate_data(train_data, test_data, real_comp_best_models, imag_comp_best_models, 
-#                 set_seed, number, repeats, file_name_string)
+out <- regenerate_data(train_data, test_data, real_comp_best_models, imag_comp_best_models,
+                set_seed, number, repeats, file_name_string)
 
 real_ensemble <- out$real
 imag_ensemble <- out$imag
 
-
-# train_data_copy = train_data
-# train_data_copy <- scale(train_data_copy, scale=TRUE, center=TRUE)
-# train_data_copy <- as.data.frame(train_data_copy)
+train_data <- train_data[-which(train_data$Freq < 0.0001), ]
 
 
-# Create the grid of predictors for the 3d plot
-# grid.lines = 60
-# grid_x <- seq(min(train_data$Volt), max(train_data$Volt), length.out = grid.lines)
-# grid_y <- seq(min(train_data$Freq), max(train_data$Freq), length.out = grid.lines)
-# gridXY <- expand.grid("Volt" = grid_x, "Freq" = grid_y)
-# 
-# Zreal_pred <- matrix(predict(real_ensemble, newdata = gridXY), nrow = grid.lines, ncol = grid.lines)
-# Zimag_pred <- matrix(predict(imag_ensemble, newdata = gridXY), nrow = grid.lines, ncol = grid.lines)
-# 
-# gridXY$"Zreal_pred" = Zreal_pred
-# gridXY$"Zimag_pred" =
+grid.lines <- 60
 
-
-# zreal_fit <- predict(real_ensemble, newdata = train_data_copy[, c(1,2)])
-# zimag_fit <- predict(imag_ensemble, newdata = train_data_copy[, c(1,2)])
-# 
-# 
-# 
-# p1 <- scatter3D(train_data$Freq, train_data$Volt, train_data_copy$Zreal, pch = 19, cex = 1,colvar = NULL, 
-#           col="red", theta = 0, phi = -40, bty="b2", ticktype="detailed",
-#           ylab = "Cell Potential", xlab = "Frequency", zlab = "Impedance (Z_real)",  
-#           surf = list(x = grid_y, y = grid_x, z = Zreal_pred ,  
-#                       facets = TRUE, fit = zreal_fit, 
-#                       col=ramp.col(col = c("dodgerblue3","seagreen2"), n = 300, alpha=0.7), 
-#                       border="black"), main = "Regression Surface")
-# 
-# p2 <- scatter3D(train_data$Freq, train_data$Volt, train_data_copy$Zimag, pch = 19, cex = 1,colvar = NULL, 
-#                 col="red", theta = -10, phi = -30, bty="b2", ticktype="detailed",
-#                 ylab = "Cell Potential", xlab = "Frequency", zlab = "Impedance (Z_real)",  
-#                 surf = list(x = grid_y, y = grid_x, z = Zimag_pred ,  
-#                             facets = TRUE, fit = zimag_fit, 
-#                             col=ramp.col(col = c("dodgerblue3","seagreen2"), n = 300, alpha=0.7), 
-#                             border="black"), main = "Regression Surface")
-
-
-# data(iris)
-# data <- iris
-# petal_lm <- lm(Petal.Length ~ 0 + Sepal.Length + Sepal.Width, data = data)
-# graph_reso <- 0.05
-# 
-# #Setup Axis
-# axis_x <- seq(min(data$Sepal.Length), max(data$Sepal.Length), by = graph_reso)
-# axis_y <- seq(min(data$Sepal.Width), max(data$Sepal.Width), by = graph_reso)
-
-#Sample points
-# petal_lm_surface <- expand.grid(Sepal.Length = axis_x, Sepal.Width = axis_y, KEEP.OUT.ATTRS = F)
-# petal_lm_surface$Petal.Length <- predict.lm(petal_lm, newdata = petal_lm_surface)
-# petal_lm_surface <- acast(petal_lm_surface, Sepal.Width ~ Sepal.Length, value.var = "Petal.Length") #y ~ x
-# 
-# 
-# hcolors=c("red","blue","green")[data$Species]
-# iris_plot <- plot_ly(data, 
-#                      x = ~Sepal.Length, 
-#                      y = ~Sepal.Width, 
-#                      z = ~Petal.Length,
-#                      text = ~Species, # EDIT: ~ added
-#                      type = "scatter3d", 
-#                      mode = "markers",
-#                      marker = list(color = hcolors))
-# 
-# iris_plot <- add_trace(p = iris_plot,
-#                        z = petal_lm_surface,
-#                        x = axis_x,
-#                        y = axis_y,
-#                        type = "surface")
-# 
-# iris_plot
-
-
-
-
-grid.lines <- 50
-
-u <- seq(0.13722964, 5.58889243, by=0.09)
-l <- seq(min(train_data$Freq), max(train_data$Freq), length.out=grid.lines)
-grid_y = c(l, u)
-# grid_y <- seq(min(train_data_copy$Freq), max(train_data_copy$Freq), length.out = grid.lines)
+# l <- seq(6.310e-03, 9.990e-01, length.out=500)
+# u <- seq(1.267e+00, 1.008e+04, length.out=grid.lines)
+# grid_y = c(l, u)
+# grid_y <- seq(min(train_data$Freq), max(train_data$Freq), by = 0.05)
+grid_y <- seq(min(train_data$Freq), max(train_data$Freq), length.out = grid.lines)
+grid_y = c(l, grid_y)
 
 grid_x <- seq(min(train_data$Volt), max(train_data$Volt), length.out = grid.lines)
 
